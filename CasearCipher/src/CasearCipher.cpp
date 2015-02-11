@@ -1,6 +1,6 @@
 //============================================================================
 // Name        : CasearCipher.cpp
-// Author      : 
+// Author      :
 // Version     :
 // Copyright   : Your copyright notice
 // Description : Hello World in C++, Ansi-style
@@ -64,12 +64,13 @@ int main(int argc, char *argv[]) {
 	string plaintext;
 	string ed;
 	bool encrypt;
-	cout << "Plaintext: ";
+	cout << "Plaintext/Ciphertext: ";
 	getline(cin, plaintext);
-	cout << "Ciphertext: ";
+	cout << "Key: ";
 	getline(cin, ciphertext);
 	cout << "(E)ncrypt or (D)ecrypt?: ";
 	getline(cin, ed);
+
 	transform(ed.begin(),ed.end(),ed.begin(),::tolower);
 	if(ed == "e" || ed == "encrypt")
 		encrypt = true;
@@ -85,8 +86,9 @@ int main(int argc, char *argv[]) {
 	// Map the ciphertext to the correct numbers
 	mapInput(ciphertext);
 
-
-	cout << encryptDecrypt(plaintext,ciphertext,encrypt);
+	string result = encryptDecrypt(plaintext,ciphertext,encrypt);
+	transform(result.begin(),result.end(),result.begin(),::toupper);
+	cout << result;
 
 	delete[] keys;
 	return 0;
