@@ -88,7 +88,8 @@ int main(int argc, char *argv[]) {
 
 	string result = encryptDecrypt(plaintext,ciphertext,encrypt);
 	transform(result.begin(),result.end(),result.begin(),::toupper);
-	cout << result;
+	cout << (encrypt ? "Ciphertext = " : "Plaintext = ");
+	cout << result << endl;
 
 	delete[] keys;
 	return 0;
