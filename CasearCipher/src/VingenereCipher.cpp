@@ -1,9 +1,8 @@
 //============================================================================
-// Name        : CasearCipher.cpp
-// Author      :
-// Version     :
-// Copyright   : Your copyright notice
-// Description : Hello World in C++, Ansi-style
+// Brent Mitchell
+// Miniproject 1
+// 2/11/2015
+// C++ 199711
 //============================================================================
 
 #include <iostream>
