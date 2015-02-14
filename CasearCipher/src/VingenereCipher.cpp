@@ -6,21 +6,25 @@
 //============================================================================
 
 #include <iostream>
+#include <fstream>
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include <map>
+#include <unordered_map>
 #include <iterator>
 #include <algorithm>
 using namespace std;
 
 const char alphabet[] = "abcdefghijklmnopqrstuvwxyz";
 map<char, int> characterNumbers;
+unordered_map<int, unordered_map<string, int>> dictionary;
 int *keys;
 int keysLength;
 
 void mapCharacters() {
-	for (int i = 0; i < 26; i++) {
+	for (int i = 0; i <= 26; i++) {
 		characterNumbers[alphabet[i]] = i;
 	}
 }
@@ -34,62 +38,100 @@ void mapInput(const string input) {
 	}
 }
 
-char numberCharacter(int n) {
-	return alphabet[n];
-}
-
-string encryptDecrypt(const string plaintext, const string ciphertext, const bool encrypt) {
-	int key;
+void decrypt(const string ciphertext, const string key,
+		const int firstWordLength) {
+	int characterNumber;
 	string result = "";
-	for (unsigned int i = 0; i < plaintext.length(); i++) {
-		if(encrypt) {
-		key = (characterNumbers.find(plaintext[i])->second
-				+ keys[i % keysLength]) % 26;
-		} else {
-			key = (characterNumbers.find(plaintext[i])->second
+	mapInput(key);
+//	for (unsigned int i = 0; i < ciphertext.length(); i++) {
+	for (int i = 0; i < firstWordLength; i++) {
+		characterNumber = (characterNumbers.find(ciphertext[i])->second
 				- keys[i % keysLength] + 26) % 26;
 
-		}
-		result += numberCharacter(key);
+		result += alphabet[characterNumber];
 	}
-	return result;
+
+	unordered_map<string, int>::const_iterator it = dictionary.find(
+			firstWordLength)->second.find(
+			result.substr(0, firstWordLength));
+
+	if (it != dictionary.find(firstWordLength)->second.end()) {
+		cout << it->first << " " << it->second << endl;
+	}
+
 }
 
 int main(int argc, char *argv[]) {
 	// Map alphabet to numbers starting with a = 0, b = 1, ...
 	mapCharacters();
 
+	ifstream myfile;
+
+	// If no command line argument, open hard coded file
+	if (argc > 1)
+		myfile.open(argv[1]);
+	else
+		myfile.open("dict.txt");
+
+	string word;
+	while (!myfile.eof()) {
+		getline(myfile, word);
+		transform(word.begin(), word.end(), word.begin(),
+			::tolower);
+		dictionary[word.length()].insert(make_pair(word, word.length()));
+	}
+	myfile.close();
+	/*
+	 for(map<int,map<string,int>>::const_iterator it = dictionary.begin();
+	 it != dictionary.end(); ++it)
+	 {
+	 //    cout << it->first << " ";
+
+	 for(map<string,int>::const_iterator it2 = it->second.begin();
+	 it2 != it->second.end(); ++it2) {
+	 cout << it2->first << " " << it2->second << endl;
+	 }
+	 }
+	 */
+
 	string ciphertext;
-	string plaintext;
-	string ed;
-	bool encrypt;
-	cout << "Plaintext/Ciphertext: ";
-	getline(cin, plaintext);
-	cout << "Key: ";
+	int keyLength;
+	int firstWordLength;
+	cout << "Ciphertext: ";
 	getline(cin, ciphertext);
-	cout << "(E)ncrypt or (D)ecrypt?: ";
-	getline(cin, ed);
+	cout << "Key Length: ";
+	cin >> keyLength;
+	cout << "First Word Length: ";
+	cin >> firstWordLength;
 
-	transform(ed.begin(),ed.end(),ed.begin(),::tolower);
-	if(ed == "e" || ed == "encrypt")
-		encrypt = true;
 	// Removes spaces and make everything lowercase
-	plaintext.erase(std::remove(plaintext.begin(), plaintext.end(), ' '),
-			plaintext.end());
-	transform(plaintext.begin(),plaintext.end(),plaintext.begin(),::tolower);
-
 	ciphertext.erase(std::remove(ciphertext.begin(), ciphertext.end(), ' '),
 			ciphertext.end());
-	transform(ciphertext.begin(),ciphertext.end(),ciphertext.begin(),::tolower);
-
+	transform(ciphertext.begin(), ciphertext.end(), ciphertext.begin(),
+			::tolower);
 	// Map the ciphertext to the correct numbers
 	mapInput(ciphertext);
 
-	string result = encryptDecrypt(plaintext,ciphertext,encrypt);
-	transform(result.begin(),result.end(),result.begin(),::toupper);
-	cout << (encrypt ? "Ciphertext = " : "Plaintext = ");
-	cout << result << endl;
+	for (int i = 0; i < pow(26, keyLength); i++) {
+		string key;
+		for (int j = keyLength - 1; j >= 0; j--) {
+			int k = (int) (i / pow(26, j)) % 26;
+			key += alphabet[k];
+		}
+		//cout << key << endl;
+		//	cout << decrypt(ciphertext,key,firstWordLength) << endl;
+		decrypt(ciphertext, key, firstWordLength);
+
+	}
+
+	/*
+	 transform(result.begin(),result.end(),result.begin(),::toupper);
+	 cout << (encrypt ? "Ciphertext = " : "Plaintext = ");
+	 cout << result << endl;
+	 */
+	cout << "Done!";
 
 	delete[] keys;
 	return 0;
 }
+
