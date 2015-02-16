@@ -11,17 +11,21 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 #include <map>
 #include <unordered_map>
 #include <iterator>
 #include <algorithm>
+
 using namespace std;
 
 const char alphabet[] = "abcdefghijklmnopqrstuvwxyz";
 map<char, int> characterNumbers;
-unordered_map<int, unordered_map<string, int>> dictionary;
-int *keys;
-int keysLength;
+//unordered_map<int, unordered_map<string, int>> dictionary;
+unordered_map<string, int> dict;
+int *keys, keysLength;
+
+clock_t t1,t2;
 
 void mapCharacters() {
 	for (int i = 0; i <= 26; i++) {
@@ -34,7 +38,6 @@ void mapInput(const string input) {
 	keysLength = input.length();
 	for (unsigned int i = 0; i < input.length(); i++) {
 		keys[i] = characterNumbers.find(input[i])->second;
-
 	}
 }
 
@@ -43,25 +46,44 @@ void decrypt(const string ciphertext, const string key,
 	int characterNumber;
 	string result = "";
 	mapInput(key);
-//	for (unsigned int i = 0; i < ciphertext.length(); i++) {
-	for (int i = 0; i < firstWordLength; i++) {
+	for (unsigned int i = 0; i < ciphertext.length(); i++) {
+//	for (int i = 0; i < firstWordLength; i++) {
 		characterNumber = (characterNumbers.find(ciphertext[i])->second
 				- keys[i % keysLength] + 26) % 26;
 
 		result += alphabet[characterNumber];
+
+		/*
+		// No need to continue if the first word is not in dictionary
+		if (i == firstWordLength - 1) {
+			unordered_map<string, int>::const_iterator it = dictionary.find(
+					firstWordLength)->second.find(
+					result.substr(0, firstWordLength));
+
+			if (it == dictionary.find(firstWordLength)->second.end()) {
+				return;
+			}
+
+		}
+		*/
+
+		// No need to continue if the first word is not in dictionary
+		if (i == firstWordLength - 1) {
+			unordered_map<string, int>::const_iterator it = dict.find(result);
+
+			if (it == dict.end()) {
+				return;
+			}
+
+		}
+
 	}
 
-	unordered_map<string, int>::const_iterator it = dictionary.find(
-			firstWordLength)->second.find(
-			result.substr(0, firstWordLength));
-
-	if (it != dictionary.find(firstWordLength)->second.end()) {
-		cout << it->first << " " << it->second << endl;
-	}
-
+	cout << result << endl;
 }
 
 int main(int argc, char *argv[]) {
+	t1 = clock();
 	// Map alphabet to numbers starting with a = 0, b = 1, ...
 	mapCharacters();
 
@@ -76,9 +98,9 @@ int main(int argc, char *argv[]) {
 	string word;
 	while (!myfile.eof()) {
 		getline(myfile, word);
-		transform(word.begin(), word.end(), word.begin(),
-			::tolower);
-		dictionary[word.length()].insert(make_pair(word, word.length()));
+		transform(word.begin(), word.end(), word.begin(), ::tolower);
+	//	dictionary[word.length()].insert(make_pair(word, word.length()));
+		dict[word] = word.length();
 	}
 	myfile.close();
 	/*
@@ -118,10 +140,9 @@ int main(int argc, char *argv[]) {
 			int k = (int) (i / pow(26, j)) % 26;
 			key += alphabet[k];
 		}
-		//cout << key << endl;
-		//	cout << decrypt(ciphertext,key,firstWordLength) << endl;
-		decrypt(ciphertext, key, firstWordLength);
 
+		decrypt(ciphertext, key, firstWordLength);
+		delete[] keys;
 	}
 
 	/*
@@ -129,9 +150,10 @@ int main(int argc, char *argv[]) {
 	 cout << (encrypt ? "Ciphertext = " : "Plaintext = ");
 	 cout << result << endl;
 	 */
-	cout << "Done!";
+	t2 = clock();
+	cout << "Done! " << ((float)t2 - (float)t1) / CLOCKS_PER_SEC;
 
-	delete[] keys;
+
 	return 0;
 }
 
