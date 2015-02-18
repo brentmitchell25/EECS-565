@@ -19,6 +19,7 @@
 #include <thread>
 #define NUM_THREADS 1
 
+
 using namespace std;
 
 const char alphabet[] = "abcdefghijklmnopqrstuvwxyz";
@@ -61,9 +62,7 @@ void decrypt(const string ciphertext, const string key,
 		// No need to continue if the first word is not in dictionary
 		if (i == firstWordLength - 1) {
 			unordered_map<string, int>::const_iterator it = dict.find(result);
-//			cout << key << endl;
 			if (it == dict.end()) {
-//				cout << endl;
 				return;
 			}
 
@@ -77,7 +76,10 @@ void decrypt(const string ciphertext, const string key,
 void findPlaintext(int threadId) {
 	int limit = pow(26,keyLength);
 	int *keys = new int [keyLength];
-	for (int i = limit/NUM_THREADS*threadId; i < ceil(limit / ( threadId % (NUM_THREADS - 1) + 1)); i++) {
+	cout << "HERE";
+	cout << limit * threadId / NUM_THREADS;
+	cout << " " << limit * (threadId + 1) / NUM_THREADS << endl;
+	for (int i = limit * threadId / NUM_THREADS; i < ceil(limit * (threadId  + 1) / NUM_THREADS); i++) {
 		string key;
 
 		for (int j = keyLength - 1; j >= 0; j--) {
