@@ -16,6 +16,8 @@
 #include <unordered_map>
 #include <iterator>
 #include <algorithm>
+#include <thread>
+#define NUM_THREADS 1
 
 using namespace std;
 
@@ -23,8 +25,9 @@ const char alphabet[] = "abcdefghijklmnopqrstuvwxyz";
 map<char, int> characterNumbers;
 //unordered_map<int, unordered_map<string, int>> dictionary;
 unordered_map<string, int> dict;
-int *keys, keysLength;
 
+int firstWordLength, keyLength;
+string ciphertext;
 clock_t t1,t2;
 
 void mapCharacters() {
@@ -33,53 +36,60 @@ void mapCharacters() {
 	}
 }
 
-void mapInput(const string input) {
-	keys = new int[input.length()];
-	keysLength = input.length();
+void mapInput(const string input, int* keys) {
+//	keys = new int[2];
+
 	for (unsigned int i = 0; i < input.length(); i++) {
 		keys[i] = characterNumbers.find(input[i])->second;
 	}
 }
 
 void decrypt(const string ciphertext, const string key,
-		const int firstWordLength) {
+		const int firstWordLength, int* keys) {
 	int characterNumber;
 	string result = "";
-	mapInput(key);
+	mapInput(key, keys);
+
 	for (unsigned int i = 0; i < ciphertext.length(); i++) {
-//	for (int i = 0; i < firstWordLength; i++) {
+		int ke = keys[i];
 		characterNumber = (characterNumbers.find(ciphertext[i])->second
-				- keys[i % keysLength] + 26) % 26;
+				- keys[i % keyLength] + 26) % 26;
 
 		result += alphabet[characterNumber];
 
-		/*
-		// No need to continue if the first word is not in dictionary
-		if (i == firstWordLength - 1) {
-			unordered_map<string, int>::const_iterator it = dictionary.find(
-					firstWordLength)->second.find(
-					result.substr(0, firstWordLength));
-
-			if (it == dictionary.find(firstWordLength)->second.end()) {
-				return;
-			}
-
-		}
-		*/
 
 		// No need to continue if the first word is not in dictionary
 		if (i == firstWordLength - 1) {
 			unordered_map<string, int>::const_iterator it = dict.find(result);
-
+//			cout << key << endl;
 			if (it == dict.end()) {
+//				cout << endl;
 				return;
 			}
 
 		}
 
 	}
-
+	cout << "RESULT = ";
 	cout << result << endl;
+}
+
+void findPlaintext(int threadId) {
+	int limit = pow(26,keyLength);
+	int *keys = new int [keyLength];
+	for (int i = limit/NUM_THREADS*threadId; i < ceil(limit / ( threadId % (NUM_THREADS - 1) + 1)); i++) {
+		string key;
+
+		for (int j = keyLength - 1; j >= 0; j--) {
+			int k = (int) (i / pow(26, j)) % 26;
+			key += alphabet[k];
+		}
+
+		decrypt(ciphertext, key, firstWordLength, keys);
+		key = "";
+		//delete[] keys;
+	}
+
 }
 
 int main(int argc, char *argv[]) {
@@ -99,26 +109,10 @@ int main(int argc, char *argv[]) {
 	while (!myfile.eof()) {
 		getline(myfile, word);
 		transform(word.begin(), word.end(), word.begin(), ::tolower);
-	//	dictionary[word.length()].insert(make_pair(word, word.length()));
 		dict[word] = word.length();
 	}
 	myfile.close();
-	/*
-	 for(map<int,map<string,int>>::const_iterator it = dictionary.begin();
-	 it != dictionary.end(); ++it)
-	 {
-	 //    cout << it->first << " ";
 
-	 for(map<string,int>::const_iterator it2 = it->second.begin();
-	 it2 != it->second.end(); ++it2) {
-	 cout << it2->first << " " << it2->second << endl;
-	 }
-	 }
-	 */
-
-	string ciphertext;
-	int keyLength;
-	int firstWordLength;
 	cout << "Ciphertext: ";
 	getline(cin, ciphertext);
 	cout << "Key Length: ";
@@ -132,24 +126,22 @@ int main(int argc, char *argv[]) {
 	transform(ciphertext.begin(), ciphertext.end(), ciphertext.begin(),
 			::tolower);
 	// Map the ciphertext to the correct numbers
-	mapInput(ciphertext);
+	//mapInput(ciphertext);
 
-	for (int i = 0; i < pow(26, keyLength); i++) {
-		string key;
-		for (int j = keyLength - 1; j >= 0; j--) {
-			int k = (int) (i / pow(26, j)) % 26;
-			key += alphabet[k];
-		}
+	thread threads[NUM_THREADS];
 
-		decrypt(ciphertext, key, firstWordLength);
-		delete[] keys;
-	}
+	   for(int i=0; i < NUM_THREADS; i++ ){
+	      cout << "main() : creating thread, " << i << endl;
+	      threads[i] = thread(findPlaintext,i);
+	   }
 
-	/*
-	 transform(result.begin(),result.end(),result.begin(),::toupper);
-	 cout << (encrypt ? "Ciphertext = " : "Plaintext = ");
-	 cout << result << endl;
-	 */
+	    for(int i=0; i < NUM_THREADS; i++ ){
+	      threads[i].join();
+
+	   }
+
+
+
 	t2 = clock();
 	cout << "Done! " << ((float)t2 - (float)t1) / CLOCKS_PER_SEC;
 
