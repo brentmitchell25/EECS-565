@@ -1,8 +1,8 @@
 //============================================================================
 // Brent Mitchell
-// Miniproject 1
-// 2/11/2015
-// C++ 199711
+// Miniproject 2
+// 2/26/2015
+// C++11
 //============================================================================
 
 #include <iostream>
@@ -19,9 +19,8 @@
 #include <thread>
 #define NUM_THREADS 16
 
-
 using namespace std;
-using namespace std::chrono;
+using namespace std::chrono; // Needed for recording execution time
 
 const char alphabet[] = "abcdefghijklmnopqrstuvwxyz";
 unordered_map<char, int> characterNumbers;
@@ -51,12 +50,10 @@ void decrypt(const string ciphertext, const string key,
 	mapInput(key, keys);
 
 	for (unsigned int i = 0; i < ciphertext.length(); i++) {
-
 		characterNumber = (characterNumbers.find(ciphertext[i])->second
 				- keys[i % keyLength] + 26) % 26;
 
 		result += alphabet[characterNumber];
-
 
 		// No need to continue if the first word is not in dictionary
 		if (i == firstWordLength - 1) {
@@ -64,7 +61,6 @@ void decrypt(const string ciphertext, const string key,
 			if (it == dict.end()) {
 				return;
 			}
-
 		}
 
 	}
@@ -77,10 +73,11 @@ void findPlaintext(int threadId) {
 	unsigned long limit = pow(26,keyLength);
 	int *keys = new int [keyLength];
 	unsigned long start = limit * threadId / NUM_THREADS;
-	unsigned long finish = ceil(limit * (threadId  + 1) / NUM_THREADS);
+	unsigned long finish = limit * (threadId  + 1) / NUM_THREADS;
 	for (unsigned long i = start; i < finish; i++) {
 		string key;
 
+		// Creates and appends letters to create key
 		for (int j = keyLength - 1; j >= 0; j--) {
 			int k = (int) (i / pow(26, j)) % 26;
 			key += alphabet[k];
@@ -89,6 +86,7 @@ void findPlaintext(int threadId) {
 		decrypt(ciphertext, key, firstWordLength, keys);
 		key = "";
 	}
+	delete [] keys;
 
 }
 
@@ -119,12 +117,12 @@ int main(int argc, char *argv[]) {
 	cout << "First Word Length: ";
 	cin >> firstWordLength;
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
 	// Removes spaces and make everything lowercase
 	ciphertext.erase(std::remove(ciphertext.begin(), ciphertext.end(), ' '),
 			ciphertext.end());
 	transform(ciphertext.begin(), ciphertext.end(), ciphertext.begin(),
 			::tolower);
-	// Map the ciphertext to the correct numbers
 
 	thread threads[NUM_THREADS];
 
@@ -137,8 +135,6 @@ int main(int argc, char *argv[]) {
 	      threads[i].join();
 
 	   }
-
-
 
 	high_resolution_clock::time_point t2 = high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
