@@ -11,25 +11,25 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <time.h>
+#include <chrono>
 #include <map>
 #include <unordered_map>
 #include <iterator>
 #include <algorithm>
 #include <thread>
-#define NUM_THREADS 1
+#define NUM_THREADS 16
 
 
 using namespace std;
+using namespace std::chrono;
 
 const char alphabet[] = "abcdefghijklmnopqrstuvwxyz";
-map<char, int> characterNumbers;
-//unordered_map<int, unordered_map<string, int>> dictionary;
+unordered_map<char, int> characterNumbers;
 unordered_map<string, int> dict;
 
 int firstWordLength, keyLength;
 string ciphertext;
-clock_t t1,t2;
+
 
 void mapCharacters() {
 	for (int i = 0; i <= 26; i++) {
@@ -38,7 +38,6 @@ void mapCharacters() {
 }
 
 void mapInput(const string input, int* keys) {
-//	keys = new int[2];
 
 	for (unsigned int i = 0; i < input.length(); i++) {
 		keys[i] = characterNumbers.find(input[i])->second;
@@ -52,7 +51,7 @@ void decrypt(const string ciphertext, const string key,
 	mapInput(key, keys);
 
 	for (unsigned int i = 0; i < ciphertext.length(); i++) {
-		int ke = keys[i];
+
 		characterNumber = (characterNumbers.find(ciphertext[i])->second
 				- keys[i % keyLength] + 26) % 26;
 
@@ -71,15 +70,15 @@ void decrypt(const string ciphertext, const string key,
 	}
 	cout << "RESULT = ";
 	cout << result << endl;
+	cout << "KEY = " << key << endl;
 }
 
 void findPlaintext(int threadId) {
-	int limit = pow(26,keyLength);
+	unsigned long limit = pow(26,keyLength);
 	int *keys = new int [keyLength];
-	cout << "HERE";
-	cout << limit * threadId / NUM_THREADS;
-	cout << " " << limit * (threadId + 1) / NUM_THREADS << endl;
-	for (int i = limit * threadId / NUM_THREADS; i < ceil(limit * (threadId  + 1) / NUM_THREADS); i++) {
+	unsigned long start = limit * threadId / NUM_THREADS;
+	unsigned long finish = ceil(limit * (threadId  + 1) / NUM_THREADS);
+	for (unsigned long i = start; i < finish; i++) {
 		string key;
 
 		for (int j = keyLength - 1; j >= 0; j--) {
@@ -89,13 +88,11 @@ void findPlaintext(int threadId) {
 
 		decrypt(ciphertext, key, firstWordLength, keys);
 		key = "";
-		//delete[] keys;
 	}
 
 }
 
 int main(int argc, char *argv[]) {
-	t1 = clock();
 	// Map alphabet to numbers starting with a = 0, b = 1, ...
 	mapCharacters();
 
@@ -121,14 +118,13 @@ int main(int argc, char *argv[]) {
 	cin >> keyLength;
 	cout << "First Word Length: ";
 	cin >> firstWordLength;
-
+	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	// Removes spaces and make everything lowercase
 	ciphertext.erase(std::remove(ciphertext.begin(), ciphertext.end(), ' '),
 			ciphertext.end());
 	transform(ciphertext.begin(), ciphertext.end(), ciphertext.begin(),
 			::tolower);
 	// Map the ciphertext to the correct numbers
-	//mapInput(ciphertext);
 
 	thread threads[NUM_THREADS];
 
@@ -144,8 +140,9 @@ int main(int argc, char *argv[]) {
 
 
 
-	t2 = clock();
-	cout << "Done! " << ((float)t2 - (float)t1) / CLOCKS_PER_SEC;
+	high_resolution_clock::time_point t2 = high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
+	cout << "Done!\nTime = " << duration / (double) 1000000 << endl;
 
 
 	return 0;
